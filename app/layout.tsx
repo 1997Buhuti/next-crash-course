@@ -1,16 +1,22 @@
+import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
+import "@clerk/ui/themes/shadcn.css";
 import type { Metadata } from "next";
-import {  JetBrains_Mono, Poppins } from "next/font/google";
+import { JetBrains_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import Navbar from "@/components/Navbar";
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
-
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -21,9 +27,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", poppins.variable, "font-sans", jetbrainsMono.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        poppins.variable,
+        "font-sans",
+        jetbrainsMono.variable
+      )}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ClerkProvider appearance={{ theme: shadcn }}>
+          <Navbar />
+          <main className="min-h-[calc(100vh-80px)] flex flex-1 flex-col items-center justify-between">
+          {children}
+          </main>
+        </ClerkProvider>
+      </body>
     </html>
   );
 }
