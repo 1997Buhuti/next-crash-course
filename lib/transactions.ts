@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import type { TransactionFormValues } from "@/lib/validations/transaction";
+import type { TransactionType } from "@/generated/prisma/client";
 
-async function resolveCategory(userId: string, categoryIdOrName: string) {
+async function resolveCategory(
+  userId: string,
+  transactionType: TransactionType,
+  categoryIdOrName: string
+) {
   const existingById = await prisma.transactionCategory.findFirst({
-    where: { id: categoryIdOrName, userId },
+    where: { id: categoryIdOrName, userId, transactionType },
   });
 
   if (existingById) {
@@ -12,9 +17,13 @@ async function resolveCategory(userId: string, categoryIdOrName: string) {
 
   return prisma.transactionCategory.upsert({
     where: {
-      userId_name: { userId, name: categoryIdOrName },
+      userId_name_transactionType: {
+        userId,
+        name: categoryIdOrName,
+        transactionType,
+      },
     },
-    create: { userId, name: categoryIdOrName },
+    create: { userId, name: categoryIdOrName, transactionType },
     update: {},
   });
 }
@@ -23,7 +32,15 @@ export async function createTransactionRecord(
   userId: string,
   input: TransactionFormValues
 ) {
-  const category = await resolveCategory(userId, input.categoryId);
+  const category = await resolveCategory(
+    userId,
+    input.transactionType,
+    input.categoryId
+  );
+
+  if (category.transactionType !== input.transactionType) {
+    throw new Error("Category does not match transaction type.");
+  }
 
   return prisma.transaction.create({
     data: {

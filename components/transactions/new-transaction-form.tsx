@@ -1,9 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, type Resolver } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 
-import { createTransaction } from "@/app/dashboard/transaction/new/actions";
+import {
+  createTransaction,
+  getCategories,
+} from "@/app/dashboard/transaction/new/actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,6 +43,9 @@ function fromDateInputValue(value: string) {
 
 export function NewTransactionForm() {
   const maxTransactionDate = toDateInputValue(new Date());
+  const [categories, setCategories] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(
@@ -53,6 +60,32 @@ export function NewTransactionForm() {
       transactionDate: new Date(),
     },
   });
+
+  const transactionType = useWatch({
+    control: form.control,
+    name: "transactionType",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      const nextCategories = await getCategories(transactionType);
+      if (!cancelled) {
+        setCategories(nextCategories);
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [transactionType]);
+
+  useEffect(() => {
+    form.setValue("categoryId", "");
+  }, [form, transactionType]);
 
   async function onSubmit(values: TransactionFormValues) {
     await createTransaction(values);
@@ -146,13 +179,19 @@ export function NewTransactionForm() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="categoryId">Category</FieldLabel>
-                  <Input
+                  <select
                     {...field}
                     id="categoryId"
                     aria-invalid={fieldState.invalid}
-                    placeholder="e.g. food"
-                    autoComplete="off"
-                  />
+                    className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

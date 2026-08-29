@@ -13,14 +13,16 @@ enum TransactionType {
 }
 
 model TransactionCategory {
-  id           String        @id @default(cuid())
-  userId       String
-  name         String
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id              String          @id @default(cuid())
+  userId          String
+  name            String
+  transactionType TransactionType
+  transactions    Transaction[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  @@unique([userId, name])
+  @@unique([userId, name, transactionType])
+  @@index([userId, transactionType])
   @@map("transaction_category")
 }
 

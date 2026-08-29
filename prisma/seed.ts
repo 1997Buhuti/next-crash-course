@@ -65,19 +65,35 @@ function startOfDay(date: Date) {
 }
 
 async function seedCategories(userId: string) {
-  const names = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
+  const categoryDefinitions = [
+    ...INCOME_CATEGORIES.map((name) => ({
+      name,
+      transactionType: "income" as const,
+    })),
+    ...EXPENSE_CATEGORIES.map((name) => ({
+      name,
+      transactionType: "expense" as const,
+    })),
+  ];
 
   const categories = await Promise.all(
-    names.map((name) =>
+    categoryDefinitions.map(({ name, transactionType }) =>
       prisma.transactionCategory.upsert({
-        where: { userId_name: { userId, name } },
-        create: { userId, name },
+        where: {
+          userId_name_transactionType: { userId, name, transactionType },
+        },
+        create: { userId, name, transactionType },
         update: {},
       })
     )
   );
 
-  return new Map(categories.map((category) => [category.name, category.id]));
+  return new Map(
+    categories.map((category) => [
+      `${category.transactionType}:${category.name}`,
+      category.id,
+    ])
+  );
 }
 
 async function seedTransactions(
@@ -92,7 +108,9 @@ async function seedTransactions(
       ? pick(INCOME_TRANSACTIONS)
       : pick(EXPENSE_TRANSACTIONS);
 
-    const categoryId = categoryIds.get(template.category);
+    const categoryId = categoryIds.get(
+      `${isIncome ? "income" : "expense"}:${template.category}`
+    );
     if (!categoryId) {
       throw new Error(`Missing category: ${template.category}`);
     }
