@@ -1,9 +1,8 @@
 import { z } from "zod";
 
-/** Tomorrow at end of day — used as the max allowed transaction date. */
-function tomorrow(): Date {
+/** End of today — used as the max allowed transaction date. */
+function endOfToday(): Date {
   const date = new Date();
-  date.setDate(date.getDate() + 1);
   date.setHours(23, 59, 59, 999);
   return date;
 }
@@ -23,7 +22,7 @@ export const transactionFormSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
   transactionDate: z
     .date({ error: "Date is required" })
-    .max(tomorrow(), "Transaction date cannot be more than one day in the future"),
+    .max(endOfToday(), "Transaction date cannot be in the future"),
 });
 
 export type TransactionFormValues = z.infer<typeof transactionFormSchema>;

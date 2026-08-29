@@ -38,6 +38,8 @@ function fromDateInputValue(value: string) {
 }
 
 export function NewTransactionForm() {
+  const maxTransactionDate = toDateInputValue(new Date());
+
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(
       transactionFormSchema
@@ -167,6 +169,7 @@ export function NewTransactionForm() {
                   <Input
                     id="transactionDate"
                     type="date"
+                    max={maxTransactionDate}
                     aria-invalid={fieldState.invalid}
                     value={
                       field.value instanceof Date
