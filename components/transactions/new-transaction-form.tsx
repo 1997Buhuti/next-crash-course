@@ -1,13 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 
-import {
-  createTransaction,
-  getCategories,
-} from "@/app/dashboard/transaction/new/actions";
+import { createTransaction } from "@/app/dashboard/transaction/new/actions";
+import type { TransactionCategoriesByType } from "@/lib/db/categories";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,29 +22,24 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { fromDateInputValue, toDateInputValue } from "@/lib/dates";
 import {
   transactionFormSchema,
   type TransactionFormValues,
 } from "@/lib/validations/transaction";
 
-function toDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+type NewTransactionFormProps = {
+  categoriesByType: TransactionCategoriesByType;
+  /** From server — keeps date fields consistent between SSR and hydration. */
+  defaultTransactionDate: Date;
+  maxTransactionDate: string;
+};
 
-function fromDateInputValue(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-export function NewTransactionForm() {
-  const maxTransactionDate = toDateInputValue(new Date());
-  const [categories, setCategories] = useState<
-    { id: string; name: string }[]
-  >([]);
-
+export function NewTransactionForm({
+  categoriesByType,
+  defaultTransactionDate,
+  maxTransactionDate,
+}: NewTransactionFormProps) {
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(
       transactionFormSchema
@@ -57,7 +50,7 @@ export function NewTransactionForm() {
       description: "",
       amount: 0,
       categoryId: "",
-      transactionDate: new Date(),
+      transactionDate: defaultTransactionDate,
     },
   });
 
@@ -66,22 +59,10 @@ export function NewTransactionForm() {
     name: "transactionType",
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCategories() {
-      const nextCategories = await getCategories(transactionType);
-      if (!cancelled) {
-        setCategories(nextCategories);
-      }
-    }
-
-    void loadCategories();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [transactionType]);
+  const categories = useMemo(
+    () => categoriesByType[transactionType],
+    [categoriesByType, transactionType]
+  );
 
   useEffect(() => {
     form.setValue("categoryId", "");
@@ -101,7 +82,11 @@ export function NewTransactionForm() {
         </CardDescription>
       </CardHeader>
 
-      <form id="new-transaction-form" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        id="new-transaction-form"
+        autoComplete="off"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <CardContent className="pt-(--card-spacing) mb-3">
           <FieldGroup>
             <Controller
@@ -113,7 +98,9 @@ export function NewTransactionForm() {
                   <select
                     {...field}
                     id="transactionType"
+                    autoComplete="off"
                     aria-invalid={fieldState.invalid}
+                    suppressHydrationWarning
                     className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
                   >
                     <option value="expense">Expense</option>
@@ -135,6 +122,7 @@ export function NewTransactionForm() {
                   <Input
                     {...field}
                     id="description"
+                    type="text"
                     aria-invalid={fieldState.invalid}
                     placeholder="e.g. Grocery shopping"
                     autoComplete="off"
@@ -182,7 +170,9 @@ export function NewTransactionForm() {
                   <select
                     {...field}
                     id="categoryId"
+                    autoComplete="off"
                     aria-invalid={fieldState.invalid}
+                    suppressHydrationWarning
                     className="h-8 w-full rounded-none border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
                   >
                     <option value="">Select a category</option>

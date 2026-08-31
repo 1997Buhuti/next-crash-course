@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,9 +9,15 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { NewTransactionForm } from "@/components/transactions/new-transaction-form";
+import { getTransactionCategoriesByType } from "@/lib/db/categories";
+import { fromDateInputValue, getTodayDateInputValue } from "@/lib/dates";
 import { HouseIcon } from "@phosphor-icons/react/ssr";
 
-export default function NewTransactionPage() {
+export default async function NewTransactionPage() {
+  const { userId } = await auth.protect();
+  const categoriesByType = await getTransactionCategoriesByType(userId);
+  const todayDate = getTodayDateInputValue();
+
   return (
     <div className="flex w-full flex-col items-start gap-6 self-stretch px-4 py-10 sm:px-6">
       <Breadcrumb>
@@ -37,7 +44,11 @@ export default function NewTransactionPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <NewTransactionForm />
+      <NewTransactionForm
+        categoriesByType={categoriesByType}
+        defaultTransactionDate={fromDateInputValue(todayDate)}
+        maxTransactionDate={todayDate}
+      />
     </div>
   );
 }

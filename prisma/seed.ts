@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { subDays } from "date-fns";
 import { config } from "dotenv";
 
+import { DEFAULT_TRANSACTION_CATEGORIES } from "../lib/constants/default-categories";
 import { PrismaClient } from "../generated/prisma/client";
 
 const root = process.cwd();
@@ -15,16 +16,6 @@ const adapter = new PrismaPg({
 });
 
 const prisma = new PrismaClient({ adapter });
-
-const INCOME_CATEGORIES = ["Salary", "Freelance", "Investments"] as const;
-const EXPENSE_CATEGORIES = [
-  "Food",
-  "Housing",
-  "Transport",
-  "Entertainment",
-  "Utilities",
-  "Healthcare",
-] as const;
 
 const INCOME_TRANSACTIONS = [
   { description: "Monthly salary", amount: 5200, category: "Salary" },
@@ -65,19 +56,8 @@ function startOfDay(date: Date) {
 }
 
 async function seedCategories(userId: string) {
-  const categoryDefinitions = [
-    ...INCOME_CATEGORIES.map((name) => ({
-      name,
-      transactionType: "income" as const,
-    })),
-    ...EXPENSE_CATEGORIES.map((name) => ({
-      name,
-      transactionType: "expense" as const,
-    })),
-  ];
-
   const categories = await Promise.all(
-    categoryDefinitions.map(({ name, transactionType }) =>
+    DEFAULT_TRANSACTION_CATEGORIES.map(({ name, transactionType }) =>
       prisma.transactionCategory.upsert({
         where: {
           userId_name_transactionType: { userId, name, transactionType },
