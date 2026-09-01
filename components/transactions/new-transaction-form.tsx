@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
+import { toast } from "sonner";
 
 import { createTransaction } from "@/app/dashboard/transaction/new/actions";
 import type { TransactionCategoriesByType } from "@/lib/db/categories";
@@ -69,8 +70,23 @@ export function NewTransactionForm({
   }, [form, transactionType]);
 
   async function onSubmit(values: TransactionFormValues) {
-    await createTransaction(values);
-    form.reset();
+    try {
+      await createTransaction(values);
+      form.reset({
+        transactionType: "expense",
+        description: "",
+        amount: 0,
+        categoryId: "",
+        transactionDate: defaultTransactionDate,
+      });
+      toast.success("Transaction created successfully.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to create transaction. Please try again.";
+      toast.error(message);
+    }
   }
 
   return (
