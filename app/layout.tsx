@@ -6,6 +6,7 @@ import { JetBrains_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
+import { Providers } from "@/components/providers";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -37,10 +38,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider appearance={{ theme: shadcn }}>
-          <Navbar />
-          <main className="min-h-[calc(100vh-80px)] flex flex-1 flex-col items-center justify-between">
-          {children}
-          </main>
+          <Providers>
+            <Navbar />
+            <main className="min-h-[calc(100vh-80px)] flex flex-1 flex-col items-center justify-between">
+              {children}
+            </main>
+          </Providers>
         </ClerkProvider>
       </body>
     </html>
